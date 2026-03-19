@@ -13,7 +13,7 @@ POWER_VALUE_ID = "49-0-Power"        # Change to match your meter's value ID
 KEY_W_CONSUMED = 'Electric_W_Consumed'
 POWER_THRESHOLD_W = 5.0                     # Watts above this = device is ON
 NTFY_URL = "https://ntfy.sh/p4r3z_pi"  # Change topic to match your ntfy topic
-APPLIANCE_NAME = "Meter"               # Friendly name for notifications
+APPLIANCE_NAME = "Sump Pump"               # Friendly name for notifications
 # ---------------------
 
 start_time = None
@@ -41,7 +41,7 @@ async def send_notification(title, message, priority="default"):
                 headers={
                     "Title": title,
                     "Priority": priority,
-                    "Tags": "electric_plug",
+                    "Tags": "droplet", #"potable_water",
                 },
             )
         print(f"[ntfy] Sent: {title} — {message}")
