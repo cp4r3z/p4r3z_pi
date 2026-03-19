@@ -6,7 +6,7 @@ services:
     tty: true
     stop_signal: SIGINT
     environment:
-      - SESSION_SECRET=belacqua
+      - SESSION_SECRET=${SESSION_SECRET}
       - ZWAVEJS_EXTERNAL_CONFIG=/usr/src/app/store/.config-db
       - TZ=America/Chicago
     devices:
