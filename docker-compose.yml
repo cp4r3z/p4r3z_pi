@@ -1,0 +1,30 @@
+services:
+  zwave-js-ui:
+    image: zwavejs/zwave-js-ui:latest
+    container_name: zwave-js-ui
+    restart: always
+    tty: true
+    stop_signal: SIGINT
+    environment:
+      - SESSION_SECRET=belacqua
+      - ZWAVEJS_EXTERNAL_CONFIG=/usr/src/app/store/.config-db
+      - TZ=America/Chicago
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0        # zwave dongle
+    volumes:
+      - zwave-config:/usr/src/app/store
+    ports:
+      - "8091:8091"   # Web UI
+      - "3000:3000"   # WebSocket API
+
+  power-monitor:
+    build: .
+    container_name: power-monitor
+    restart: always
+    environment:
+      - TZ=America/Chicago
+    depends_on:
+      - zwave-js-ui
+
+volumes:
+  zwave-config:
