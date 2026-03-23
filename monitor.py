@@ -20,6 +20,7 @@ GARAGE_VALUE_ID = "48-0-Any"               # Value ID for garage door sensor
 
 start_time = None
 is_running = False
+garage_door_open = False
 
 
 def format_duration(seconds):
@@ -90,19 +91,43 @@ async def handle_value_update_sump_pump(data):
 
 
 async def handle_value_update_garage(data):
+    global garage_door_open
     current_value = data.get("args", {}).get("newValue")
-    print(f"[monitor] Garage door sensor update: {current_value}")
+    garage_door_open = current_value is True
+    print(f"[monitor] Garage door sensor update: {'open' if garage_door_open else 'closed'}")
 
-    if current_value is True:
+    if garage_door_open:
         now = datetime.now()
         print(f"[monitor] Garage door opened at {now.strftime('%H:%M:%S')}")
-        if now.hour >= 21:
+        if now.hour >= 22:
             await send_notification(
-                "Garage Door Opened",
+                "Garage Door Opened Late",
                 f"Garage door opened at {now.strftime('%I:%M %p')}",
                 priority="high",
                 tags="oncoming_automobile"
             )
+
+
+async def daily_garage_check():
+    while True:
+        now = datetime.now()
+        target = now.replace(hour=21, minute=0, second=0, microsecond=0)
+        if now >= target:
+            target = target.replace(day=target.day + 1)
+        seconds_until_check = (target - now).total_seconds()
+        print(f"[garage] Next daily check in {format_duration(seconds_until_check)}")
+        await asyncio.sleep(seconds_until_check)
+
+        if garage_door_open:
+            print("[garage] Daily check: garage door is OPEN, sending notification")
+            await send_notification(
+                "Garage Door Left Open",
+                "Garage door is still open at 9PM!",
+                priority="urgent",
+                tags="oncoming_automobile"
+            )
+        else:
+            print("[garage] Daily check: garage door is closed, all good")
 
 
 async def handle_value_update(data):
@@ -159,4 +184,6 @@ async def connect():
 
 
 if __name__ == "__main__":
-    asyncio.run(connect())
+    async def main():
+        await asyncio.gather(connect(), daily_garage_check())
+    asyncio.run(main())
