@@ -98,8 +98,13 @@ async def handle_value_update_garage(data):
 
     global garage_door_open
     current_value = data.get("args", {}).get("newValue")
-    garage_door_open = current_value is True
-    print(f"[monitor] Garage door sensor update: {'open' if garage_door_open else 'closed'}")
+    new_state = current_value is True
+
+    if new_state == garage_door_open:
+        return
+
+    garage_door_open = new_state
+    print(f"[monitor] Garage door state changed: {'open' if garage_door_open else 'closed'}")
 
     if garage_door_open:
         now = datetime.now()
