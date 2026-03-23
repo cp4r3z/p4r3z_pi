@@ -14,6 +14,8 @@ KEY_W_CONSUMED = 'Electric_W_Consumed'
 POWER_THRESHOLD_W = 5.0                     # Watts above this = device is ON
 NTFY_URL = "https://ntfy.sh/p4r3z_pi"  # Change topic to match your ntfy topic
 APPLIANCE_NAME = "Sump Pump"               # Friendly name for notifications
+GARAGE_NODE_ID = 6                          # Z-Wave node ID for garage door sensor
+GARAGE_VALUE_ID = "48-0-Any"               # Value ID for garage door sensor
 # ---------------------
 
 start_time = None
@@ -49,45 +51,56 @@ async def send_notification(title, message, priority="default"):
         print(f"[ntfy] Failed to send notification: {e}")
 
 
-async def handle_value_update(data):
+async def handle_value_update_power(data):
     global start_time, is_running
 
+    key = data.get("args", {}).get("propertyKeyName")
+    current_value = data.get("args", {}).get("newValue")
+
+    if key != KEY_W_CONSUMED:
+        return
+
+    print(f"[monitor] Node {POWER_NODE_ID} power reading: {current_value}W")
+
+    if current_value >= POWER_THRESHOLD_W and not is_running:
+        # Device just turned ON
+        is_running = True
+        start_time = time.time()
+        print(f"[monitor] {APPLIANCE_NAME} started")
+        await send_notification(
+            f"{APPLIANCE_NAME} Started",
+            f"{APPLIANCE_NAME} turned on ({current_value}W)",
+            priority="default"
+        )
+
+    elif current_value < POWER_THRESHOLD_W and is_running:
+        # Device just turned OFF
+        is_running = False
+        duration = time.time() - start_time
+        start_time = None
+        duration_str = format_duration(duration)
+        print(f"[monitor] {APPLIANCE_NAME} stopped after {duration_str}")
+        await send_notification(
+            f"{APPLIANCE_NAME} Finished",
+            f"{APPLIANCE_NAME} ran for {duration_str}",
+            priority="high"
+        )
+
+
+async def handle_value_update_garage(data):
+    # TODO: implement garage door sensor handling
+    current_value = data.get("args", {}).get("newValue")
+    print(f"[monitor] Garage door sensor update: {current_value}")
+
+
+async def handle_value_update(data):
     try:
         node_id = data.get("nodeId")
-        #value_id = data.get("args", {}).get("valueId", {})
-        key = data.get("args", {}).get("propertyKeyName")
-        current_value = data.get("args", {}).get("newValue")
 
-        # Filter to only our target node and value
-        #constructed_id = f"{value_id.get('commandClassId')}-{value_id.get('endpoint')}-{value_id.get('property')}"
-        if node_id != POWER_NODE_ID or key != KEY_W_CONSUMED:
-            return
-
-        print(f"[monitor] Node {node_id} power reading: {current_value}W")
-
-        if current_value >= POWER_THRESHOLD_W and not is_running:
-            # Device just turned ON
-            is_running = True
-            start_time = time.time()
-            print(f"[monitor] {APPLIANCE_NAME} started")
-            await send_notification(
-                f"{APPLIANCE_NAME} Started",
-                f"{APPLIANCE_NAME} turned on ({current_value}W)",
-                priority="default"
-            )
-
-        elif current_value < POWER_THRESHOLD_W and is_running:
-            # Device just turned OFF
-            is_running = False
-            duration = time.time() - start_time
-            start_time = None
-            duration_str = format_duration(duration)
-            print(f"[monitor] {APPLIANCE_NAME} stopped after {duration_str}")
-            await send_notification(
-                f"{APPLIANCE_NAME} Finished",
-                f"{APPLIANCE_NAME} ran for {duration_str}",
-                priority="high"
-            )
+        if node_id == POWER_NODE_ID:
+            await handle_value_update_power(data)
+        elif node_id == GARAGE_NODE_ID:
+            await handle_value_update_garage(data)
 
     except Exception as e:
         print(f"[monitor] Error handling value update: {e}")
