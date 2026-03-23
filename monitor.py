@@ -3,7 +3,7 @@ import json
 import time
 import httpx
 import websockets
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 # --- Configuration ---
 ZWAVEJS_WS_URL = "ws://zwave-js-ui:3000"   # WebSocket URL for Z-Wave JS UI
@@ -34,7 +34,7 @@ def format_duration(seconds):
         return f"{secs}s"
 
 
-async def send_notification(title, message, priority="default"):
+async def send_notification(title, message, priority="default", tags="bell"):
     try:
         async with httpx.AsyncClient() as client:
             await client.post(
@@ -43,7 +43,7 @@ async def send_notification(title, message, priority="default"):
                 headers={
                     "Title": title,
                     "Priority": priority,
-                    "Tags": "droplet", #"potable_water",
+                    "Tags": tags,
                 },
             )
         print(f"[ntfy] Sent: {title} — {message}")
@@ -70,7 +70,8 @@ async def handle_value_update_sump_pump(data):
         await send_notification(
             f"{APPLIANCE_NAME} Started",
             f"{APPLIANCE_NAME} turned on ({current_value}W)",
-            priority="default"
+            priority="default",
+            tags="droplet"
         )
 
     elif current_value < SUMP_PUMP_THRESHOLD_W and is_running:
@@ -83,14 +84,25 @@ async def handle_value_update_sump_pump(data):
         await send_notification(
             f"{APPLIANCE_NAME} Finished",
             f"{APPLIANCE_NAME} ran for {duration_str}",
-            priority="high"
+            priority="high",
+            tags="droplet"
         )
 
 
 async def handle_value_update_garage(data):
-    # TODO: implement garage door sensor handling
     current_value = data.get("args", {}).get("newValue")
     print(f"[monitor] Garage door sensor update: {current_value}")
+
+    if current_value is True:
+        now = datetime.now()
+        print(f"[monitor] Garage door opened at {now.strftime('%H:%M:%S')}")
+        if now.hour >= 21:
+            await send_notification(
+                "Garage Door Opened",
+                f"Garage door opened at {now.strftime('%I:%M %p')}",
+                priority="high",
+                tags="oncoming_automobile"
+            )
 
 
 async def handle_value_update(data):
