@@ -15,7 +15,8 @@ SUMP_PUMP_THRESHOLD_W = 5.0                 # Watts above this = sump pump is ON
 NTFY_URL = "https://ntfy.sh/p4r3z_pi"  # Change topic to match your ntfy topic
 APPLIANCE_NAME = "Sump Pump"               # Friendly name for notifications
 GARAGE_NODE_ID = 6                          # Z-Wave node ID for garage door sensor
-GARAGE_VALUE_ID = "48-0-Any"               # Value ID for garage door sensor
+GARAGE_VALUE_ID = "48-0-Any"    
+GARAGE_SENSOR_COMMAND_CLASS_NAME = "Binary Sensor" # No propertyKeyName for garage sensor I don't think
 # ---------------------
 
 start_time = None
@@ -91,6 +92,10 @@ async def handle_value_update_sump_pump(data):
 
 
 async def handle_value_update_garage(data):
+    command_class = data.get("args", {}).get("commandClassName")
+    if command_class != GARAGE_SENSOR_COMMAND_CLASS_NAME:
+        return
+
     global garage_door_open
     current_value = data.get("args", {}).get("newValue")
     garage_door_open = current_value is True
