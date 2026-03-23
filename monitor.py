@@ -8,10 +8,10 @@ from datetime import timedelta
 # --- Configuration ---
 ZWAVEJS_WS_URL = "ws://zwave-js-ui:3000"   # WebSocket URL for Z-Wave JS UI
 #ZWAVEJS_WS_URL = "ws://pihole.local:3000"   # WebSocket URL for Z-Wave JS UI (debugging on local network)
-POWER_NODE_ID = 2                           # Change to your power meter's node ID
-POWER_VALUE_ID = "49-0-Power"        # Change to match your meter's value ID
+SUMP_PUMP_NODE_ID = 2                       # Z-Wave node ID for sump pump power meter
+SUMP_PUMP_VALUE_ID = "49-0-Power"           # Value ID for sump pump power meter
 KEY_W_CONSUMED = 'Electric_W_Consumed'
-POWER_THRESHOLD_W = 5.0                     # Watts above this = device is ON
+SUMP_PUMP_THRESHOLD_W = 5.0                 # Watts above this = sump pump is ON
 NTFY_URL = "https://ntfy.sh/p4r3z_pi"  # Change topic to match your ntfy topic
 APPLIANCE_NAME = "Sump Pump"               # Friendly name for notifications
 GARAGE_NODE_ID = 6                          # Z-Wave node ID for garage door sensor
@@ -51,7 +51,7 @@ async def send_notification(title, message, priority="default"):
         print(f"[ntfy] Failed to send notification: {e}")
 
 
-async def handle_value_update_power(data):
+async def handle_value_update_sump_pump(data):
     global start_time, is_running
 
     key = data.get("args", {}).get("propertyKeyName")
@@ -60,9 +60,9 @@ async def handle_value_update_power(data):
     if key != KEY_W_CONSUMED:
         return
 
-    print(f"[monitor] Node {POWER_NODE_ID} power reading: {current_value}W")
+    print(f"[monitor] Node {SUMP_PUMP_NODE_ID} power reading: {current_value}W")
 
-    if current_value >= POWER_THRESHOLD_W and not is_running:
+    if current_value >= SUMP_PUMP_THRESHOLD_W and not is_running:
         # Device just turned ON
         is_running = True
         start_time = time.time()
@@ -73,7 +73,7 @@ async def handle_value_update_power(data):
             priority="default"
         )
 
-    elif current_value < POWER_THRESHOLD_W and is_running:
+    elif current_value < SUMP_PUMP_THRESHOLD_W and is_running:
         # Device just turned OFF
         is_running = False
         duration = time.time() - start_time
@@ -97,8 +97,8 @@ async def handle_value_update(data):
     try:
         node_id = data.get("nodeId")
 
-        if node_id == POWER_NODE_ID:
-            await handle_value_update_power(data)
+        if node_id == SUMP_PUMP_NODE_ID:
+            await handle_value_update_sump_pump(data)
         elif node_id == GARAGE_NODE_ID:
             await handle_value_update_garage(data)
 
