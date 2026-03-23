@@ -1,3 +1,7 @@
+# Example docker bash commands:
+# cd docker/zwave-js-ui/
+# sudo CACHEBUST=$(date +%s) docker-compose up -d --build
+
 services:
   zwave-js-ui:
     image: zwavejs/zwave-js-ui:latest
@@ -18,7 +22,9 @@ services:
       - "3000:3000"   # WebSocket API
 
   power-monitor:
-    build: .
+    build:
+      context: .
+      #no_cache: true
     container_name: power-monitor
     restart: always
     environment:
