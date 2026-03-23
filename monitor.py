@@ -113,7 +113,7 @@ async def daily_garage_check():
         now = datetime.now()
         target = now.replace(hour=21, minute=0, second=0, microsecond=0)
         if now >= target:
-            target = target.replace(day=target.day + 1)
+            target += timedelta(days=1)
         seconds_until_check = (target - now).total_seconds()
         print(f"[garage] Next daily check in {format_duration(seconds_until_check)}")
         await asyncio.sleep(seconds_until_check)
