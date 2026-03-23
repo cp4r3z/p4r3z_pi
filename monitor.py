@@ -6,8 +6,8 @@ import websockets
 from datetime import timedelta, datetime
 
 # --- Configuration ---
-ZWAVEJS_WS_URL = "ws://zwave-js-ui:3000"   # WebSocket URL for Z-Wave JS UI
-#ZWAVEJS_WS_URL = "ws://pihole.local:3000"   # WebSocket URL for Z-Wave JS UI (debugging on local network)
+#ZWAVEJS_WS_URL = "ws://zwave-js-ui:3000"   # WebSocket URL for Z-Wave JS UI
+ZWAVEJS_WS_URL = "ws://pihole.local:3000"   # WebSocket URL for Z-Wave JS UI (debugging on local network)
 SUMP_PUMP_NODE_ID = 2                       # Z-Wave node ID for sump pump power meter
 SUMP_PUMP_VALUE_ID = "49-0-Power"           # Value ID for sump pump power meter
 KEY_W_CONSUMED = 'Electric_W_Consumed'
@@ -119,6 +119,7 @@ async def handle_value_update_garage(data):
 
 
 async def daily_garage_check():
+    print("[garage] Starting daily garage door check task")
     while True:
         now = datetime.now()
         target = now.replace(hour=21, minute=0, second=0, microsecond=0)
