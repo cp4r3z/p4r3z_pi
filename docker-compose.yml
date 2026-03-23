@@ -1,6 +1,6 @@
 # Example docker bash commands:
 # cd docker/zwave-js-ui/
-# sudo CACHEBUST=$(date +%s) docker-compose up -d --build
+# sudo docker-compose build --build-arg CACHEBUST=$(date +%s) power-monitor && sudo docker-compose up -d
 
 services:
   zwave-js-ui:
